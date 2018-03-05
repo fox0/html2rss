@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from os.path import dirname, join
 from xml.etree import cElementTree as et
 from json import JSONDecoder
 import requests
@@ -37,7 +38,7 @@ def load_rules():
     item - обязательный параметр. Строка или словарь.
     user_agent - опционально
     """
-    with open('rules.json') as f:
+    with open(join(dirname(__file__), 'rules.json')) as f:
         return JSONDecoder().decode(f.read())
 
 
