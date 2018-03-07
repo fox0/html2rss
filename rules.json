@@ -1,6 +1,31 @@
 {
   "http://medstories.net/": {
     "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-    "item": "div.story-content"
+    "item": {
+      "parent": {
+        "tag": "div",
+        "attrs": {
+          "class": "story-wrapper"
+        }
+      },
+      "title": {
+        "tag": "div",
+        "attrs": {
+          "class": "story-link"
+        }
+      },
+      "link": {
+        "tag": "div",
+        "attrs": {
+          "class": "story-link"
+        }
+      },
+      "description": {
+        "tag": "div",
+        "attrs": {
+          "class": "story-content"
+        }
+      }
+    }
   }
 }

@@ -3,6 +3,7 @@ import re
 import sys
 from os.path import dirname, join
 from json import JSONDecoder
+from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree as ET
@@ -53,20 +54,22 @@ class Parser(object):
 
     def _get_items(self):
         result = []
-        for i in self.soup.select(self.rule['item']):
-            result.append(E.item(
-                E.description(i.__unicode__())
-            ))
-        # for i in self.soup.select(self.rule['parent']):
-        #     ls = []
-        #     for k in ('title',):
-        #         try:
-        #             selector = self.rule[k]
-        #             a = i.select(selector)
-        #             ls.append(a)
-        #         except KeyError:
-        #             pass
-        #     result.append(E.item(*ls))
+        parsed_uri = urlparse(self.url)
+        p = self.rule['item'].pop('parent')
+        for tag in self.soup.find_all(p['tag'], attrs=p['attrs']):
+            ls = []
+            for k, p in self.rule['item'].items():
+                tag2 = tag.find(p['tag'], attrs=p['attrs'])
+                # todo rewrite?
+                if k == 'link':
+                    href = tag2.find('a')['href']
+                    text = '{uri.scheme}://{uri.netloc}{href}'.format(uri=parsed_uri, href=href)
+                elif k == 'description':
+                    text = tag2.__unicode__()
+                else:
+                    text = tag2.text.strip()
+                ls.append(E.__getattr__(k)(text))
+            result.append(E.item(*ls))
         return result
 
 
