@@ -10,10 +10,6 @@ from lxml import etree as ET
 from lxml.builder import E
 
 
-def main(url='http://medstories.net/'):
-    print(Parser(url).to_rss())
-
-
 def load_rules():
     with open(join(dirname(__file__), 'rules.json')) as f:
         d = JSONDecoder().decode(f.read())
@@ -44,26 +40,30 @@ class Parser(object):
         return response.text
 
     def to_rss(self):
-        rss = E.rss(
-            E.channel(
-                E.title(self.soup.title.string),
-                E.link(self.url),
-                E.description(self.soup.find('meta', attrs={'name': 'description'})['content']),
-                *self._get_items()), version='2.0')
+        ls = self._get_items()
+        ls.append(E.title(self.soup.title.string))
+        ls.append(E.link(self.url))
+        try:
+            t = self.soup.find('meta', attrs={'name': 'description'})['content']
+            ls.append(E.description(t))
+        except TypeError:
+            pass
+        rss = E.rss(E.channel(*ls), version='2.0')
         return ET.tostring(rss, xml_declaration=True, encoding='utf-8').decode('utf-8')
 
     def _get_items(self):
         result = []
         parsed_uri = urlparse(self.url)
         p = self.rule['item'].pop('parent')
-        for tag in self.soup.find_all(p['tag'], attrs=p['attrs']):
+        for tag in self.soup.find_all(p['tag'], attrs=p.get('attrs', {})):
             ls = []
             for k, p in self.rule['item'].items():
-                tag2 = tag.find(p['tag'], attrs=p['attrs'])
+                tag2 = tag.find(p['tag'], attrs=p.get('attrs', {}))
                 # todo rewrite?
                 if k == 'link':
                     href = tag2.find('a')['href']
                     text = '{uri.scheme}://{uri.netloc}{href}'.format(uri=parsed_uri, href=href)
+                    ls.append(E.guid(text))  # todo?
                 elif k == 'description':
                     text = tag2.__unicode__()
                 else:
@@ -74,4 +74,4 @@ class Parser(object):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    print(Parser(sys.argv[1]).to_rss())

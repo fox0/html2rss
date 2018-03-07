@@ -27,5 +27,27 @@
         }
       }
     }
+  },
+  "https://ficbook.net/fanfiction/\\w+/[\\w_]+": {
+    "item": {
+      "parent": {
+        "tag": "article",
+        "attrs": {
+          "class": "block"
+        }
+      },
+      "title": {
+        "tag": "h3"
+      },
+      "link": {
+        "tag": "h3"
+      },
+      "description": {
+        "tag": "div",
+        "attrs": {
+          "class": "description"
+        }
+      }
+    }
   }
 }
