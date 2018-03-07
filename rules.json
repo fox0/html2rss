@@ -29,6 +29,10 @@
     }
   },
   "https://ficbook.net/fanfiction/\\w+/[\\w_]+": {
+    "paginator": {
+      "name": "p",
+      "count": 2
+    },
     "item": {
       "parent": {
         "tag": "article",
