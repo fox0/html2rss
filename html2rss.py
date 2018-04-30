@@ -11,7 +11,7 @@ from lxml.builder import E
 
 
 def load_rules():
-    with open(join(dirname(__file__), 'rules.json')) as f:
+    with open(join(dirname(__file__), 'rules.json')) as f:  # todo cssselect?
         d = JSONDecoder().decode(f.read())
     return list((re.compile(expr), rule) for expr, rule in d.items())
 
