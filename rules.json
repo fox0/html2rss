@@ -53,5 +53,27 @@
         }
       }
     }
+  },
+  "https://pikabu.ru/@\\w+": {
+    "item": {
+      "parent": {
+        "tag": "div",
+        "attrs": {
+          "class": "story__main"
+        }
+      },
+      "title": {
+        "tag": "header"
+      },
+      "link": {
+        "tag": "h2"
+      },
+      "description": {
+        "tag": "div",
+        "attrs": {
+          "class": "story__content-inner"
+        }
+      }
+    }
   }
 }

@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
+import os
 import re
 import sys
-from os.path import dirname, join
+import logging
 from json import JSONDecoder
 from urllib.parse import urlparse
+
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree as ET
 from lxml.builder import E
 
+log = logging.getLogger(__name__)
+
 
 def load_rules():
-    with open(join(dirname(__file__), 'rules.json')) as f:  # todo cssselect?
+    filename = os.path.join(os.path.dirname(__file__), 'rules.json')
+    with open(filename) as f:  # todo cssselect?
         d = JSONDecoder().decode(f.read())
     return list((re.compile(expr), rule) for expr, rule in d.items())
 
@@ -32,7 +37,7 @@ class Parser(object):
 
     def to_rss(self):
         ls = []
-        soup = self._get_soup(self.url)
+        soup = self._get_soup(self.url)  # (!)
         ls.extend(self._get_feed_info(soup))
         ls.extend(self._get_items(soup))  # first page
 
@@ -53,7 +58,8 @@ class Parser(object):
             headers = None
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        return BeautifulSoup(response.text, 'lxml')
+        # return BeautifulSoup(response.text, 'lxml')  # глючит с https://pikabu.ru/@iLawyer
+        return BeautifulSoup(response.text, 'html.parser')
 
     def _get_feed_info(self, soup):
         result = [E.title(soup.find('title').text), E.link(self.url)]
@@ -66,15 +72,25 @@ class Parser(object):
         result = []
         rule = self.rule['item'].copy()
         sel = rule.pop('parent')
-        for tag in soup.find_all(sel['tag'], attrs=sel.get('attrs', {})):
+        queryset = soup.find_all(sel['tag'], attrs=sel.get('attrs', {}))
+        if not queryset:
+            log.error('Not found parent tag "%s"', sel)
+        for tag in queryset:
             ls = []
             for k, sel in rule.items():
                 tag2 = tag.find(sel['tag'], attrs=sel.get('attrs', {}))
-                # todo rewrite?
+                if not tag2:
+                    log.warning('Not found tag "%s". Ignore it.', sel)
+                    continue
                 if k == 'link':
                     href = tag2.find('a')['href']
-                    text = '{uri.scheme}://{uri.netloc}{href}'.format(uri=self.parsed_uri, href=href)
-                    ls.append(E.guid(text))  # todo?
+                    if not href:
+                        log.warning('Not found link')
+                    uri2 = urlparse(href)
+                    log.debug(uri2)
+                    text = '{uri.scheme}://{uri.netloc}{uri2.path}'.format(uri=self.parsed_uri, uri2=uri2)
+                    ls.append(E.guid(text))
+                    log.debug(text)
                 elif k == 'description':
                     text = tag2.__unicode__()
                 else:
@@ -85,4 +101,8 @@ class Parser(object):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    if len(sys.argv) == 1:
+        # sys.argv.append('http://medstories.net/')
+        sys.argv.append('https://pikabu.ru/@iLawyer')
     print(Parser(sys.argv[1]).to_rss())
