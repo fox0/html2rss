@@ -1,30 +1,21 @@
 {
   "http://medstories.net/": {
-    "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-    "item": {
-      "parent": {
-        "tag": "div",
-        "attrs": {
-          "class": "story-wrapper"
-        }
-      },
-      "title": {
-        "tag": "div",
-        "attrs": {
-          "class": "story-link"
-        }
-      },
-      "link": {
-        "tag": "div",
-        "attrs": {
-          "class": "story-link"
-        }
-      },
-      "description": {
-        "tag": "div",
-        "attrs": {
-          "class": "story-content"
-        }
+    "parent": {
+      "tag": "div",
+      "attrs": {
+        "class": "story-wrapper"
+      }
+    },
+    "link": {
+      "tag": "div",
+      "attrs": {
+        "class": "story-link"
+      }
+    },
+    "text": {
+      "tag": "div",
+      "attrs": {
+        "class": "story-content"
       }
     }
   },
@@ -33,46 +24,40 @@
       "name": "p",
       "count": 2
     },
-    "item": {
-      "parent": {
-        "tag": "article",
-        "attrs": {
-          "class": "block"
-        }
-      },
-      "title": {
-        "tag": "h3"
-      },
-      "link": {
-        "tag": "h3"
-      },
-      "description": {
-        "tag": "div",
-        "attrs": {
-          "class": "description"
-        }
+    "parent": {
+      "tag": "article",
+      "attrs": {
+        "class": "block"
+      }
+    },
+    "link": {
+      "tag": "h3"
+    },
+    "text": {
+      "tag": "div",
+      "attrs": {
+        "class": "description"
       }
     }
   },
   "https://pikabu.ru/@\\w+": {
-    "item": {
-      "parent": {
-        "tag": "div",
-        "attrs": {
-          "class": "story__main"
-        }
-      },
-      "title": {
-        "tag": "header"
-      },
-      "link": {
-        "tag": "h2"
-      },
-      "description": {
-        "tag": "div",
-        "attrs": {
-          "class": "story__content-inner"
-        }
+    "count": 10,
+    "parent": {
+      "tag": "div",
+      "attrs": {
+        "class": "story__main"
+      }
+    },
+    "link": {
+      "tag": "h2"
+    },
+    "title": {
+      "tag": "header"
+    },
+    "text": {
+      "tag": "div",
+      "attrs": {
+        "class": "story__content-inner"
       }
     }
   }
