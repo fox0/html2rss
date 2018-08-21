@@ -66,9 +66,10 @@ class Parser(object):
             }
             log.debug(headers)
         response = requests.get(url, headers=headers)
+        if self.rule.get('fix_encoding', False):
+            response.encoding = response.apparent_encoding
         response.raise_for_status()
-        # return BeautifulSoup(response.text, 'lxml')  # глючит с https://pikabu.ru/@iLawyer
-        return BeautifulSoup(response.text, 'html.parser')
+        return BeautifulSoup(response.text, self.rule.get('parser', 'lxml'))
 
     def _get_feed_info(self, soup):
         result = [E.title(soup.find('title').text), E.link(self.url)]
@@ -82,16 +83,27 @@ class Parser(object):
         queryset = self._find_all(soup, 'parent')
         if 'count' in self.rule:
             queryset = queryset[:self.rule['count']]
+        name_title = 'title' if 'title' in self.rule else 'link'
         for tag in queryset:
             ls = []
-            href = self._find_all(tag, 'link')[0].find('a')['href']
-            text = '{uri.scheme}://{uri.netloc}{uri2.path}'.format(uri=urlparse(self.url), uri2=urlparse(href))
-            log.debug(text)
-            ls.append(E.link(text))
-            ls.append(E.guid(text))
-            ls.append(E.title(self._find_all(tag, 'title' if 'title' in self.rule else 'link')[0].text.strip()))
-            ls.append(E.description(self._find_all(tag, 'text')[0].__unicode__()))
+            link = self._get_link(tag)
+            ls.append(E.link(link))
+            ls.append(E.guid(link))
+            ls.append(E.title(self._find_all(tag, name_title)[0].text.strip()))
+            if 'text' in self.rule:
+                tag = self._find_all(tag, 'text')[0]
+            ls.append(E.description(tag.__unicode__()))
             result.append(E.item(*ls))
+        return result
+
+    def _get_link(self, soup):
+        rule = self.rule['link']
+        tag = soup.find_all(rule['tag'], attrs=rule.get('attrs', {}))[0]
+        if rule['tag'] != 'a':
+            tag = tag.find('a')
+        url = tag['href']
+        result = '{uri.scheme}://{uri.netloc}{uri2.path}'.format(uri=urlparse(self.url), uri2=urlparse(url))
+        log.debug(result)
         return result
 
     def _find_all(self, soup, sel):
@@ -105,6 +117,5 @@ class Parser(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     if len(sys.argv) == 1:
-        # sys.argv.append('http://medstories.net/')
-        sys.argv.append('https://pikabu.ru/@iLawyer')
+        sys.argv.append('http://www.altairegion-im.ru/news.html?t=1')
     sys.stdout.write(Parser(sys.argv[1]).to_rss())
