@@ -20,10 +20,6 @@
     }
   },
   "https://ficbook.net/fanfiction/\\w+/[\\w_]+": {
-    "paginator": {
-      "name": "p",
-      "count": 2
-    },
     "parent": {
       "tag": "article",
       "attrs": {
@@ -38,11 +34,13 @@
       "attrs": {
         "class": "description"
       }
+    },
+    "paginator": {
+      "name": "p",
+      "count": 2
     }
   },
   "https://pikabu.ru/@\\w+": {
-    "count": 10,
-    "parser": "html.parser",
     "parent": {
       "tag": "div",
       "attrs": {
@@ -60,18 +58,10 @@
       "attrs": {
         "class": "story__content-inner"
       }
-    }
-  },
-  "http://www.altairegion-im.ru/news.html": {
-    "fix_encoding": true,
-    "parent": {
-      "tag": "div",
-      "attrs": {
-        "class": "news_list"
-      }
     },
-    "link": {
-      "tag": "a"
-    }
+    "slice": {
+      "end": -1
+    },
+    "parser": "html.parser"
   }
 }

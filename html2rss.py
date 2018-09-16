@@ -15,6 +15,20 @@ log = logging.getLogger(__name__)
 
 
 def load_rules():
+    """
+    "http://<url>": {
+      "parent": {"tag": "", ["attrs": {}]}
+      "link": …
+      "text": …
+
+      ["title": …]
+      ["user_agent": ""]
+      ["fix_encoding": True]
+      ["parser": ""]
+      ["paginator": {"name": "", "count": 0},]
+      ["slice": …]
+    }
+    """
     filename = os.path.join(os.path.dirname(__file__), 'rules.json')
     with open(filename) as f:
         d = JSONDecoder().decode(f.read())
@@ -81,8 +95,10 @@ class Parser(object):
     def _get_items(self, soup):
         result = []
         queryset = self._find_all(soup, 'parent')
-        if 'count' in self.rule:
-            queryset = queryset[:self.rule['count']]
+        if 'slice' in self.rule:
+            begin = self.rule['slice'].get('begin', 0)
+            end = self.rule['slice']['end']
+            queryset = queryset[begin:end]
         name_title = 'title' if 'title' in self.rule else 'link'
         for tag in queryset:
             ls = []
@@ -116,6 +132,6 @@ class Parser(object):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    if len(sys.argv) == 1:
-        sys.argv.append('http://www.altairegion-im.ru/news.html?t=1')
+    # if len(sys.argv) == 1:
+    #     sys.argv.append('http://www.altairegion-im.ru/news.html?t=1')
     sys.stdout.write(Parser(sys.argv[1]).to_rss())
