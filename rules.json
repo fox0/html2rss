@@ -1,4 +1,15 @@
 {
+  "https://onibi.ru/manga/\\.*": {
+    "parent": {
+      "tag": "li",
+      "attrs": {
+        "class": "wp-manga-chapter"
+      }
+    },
+    "link": {
+      "tag": "a"
+    }
+  },
   "http://medstories.net/": {
     "parent": {
       "tag": "div",

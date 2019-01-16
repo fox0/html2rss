@@ -14,13 +14,14 @@ from lxml.builder import E
 log = logging.getLogger(__name__)
 
 
+# todo отдельные файлы-конфиги по названию хоста
 def load_rules():
     """
     "http://<url>": {
       "parent": {"tag": "", ["attrs": {}]}
       "link": …
-      "text": …
 
+      "text": …
       ["title": …]
       ["user_agent": ""]
       ["fix_encoding": True]
@@ -32,7 +33,12 @@ def load_rules():
     filename = os.path.join(os.path.dirname(__file__), 'rules.json')
     with open(filename) as f:
         d = JSONDecoder().decode(f.read())
-    return list((re.compile(expr), rule) for expr, rule in d.items())
+    r = []
+    for expr, rule in d.items():
+        assert 'parent' in rule
+        assert 'link' in rule
+        r.append((re.compile(expr), rule))
+    return r
 
 
 rules = load_rules()
@@ -132,6 +138,6 @@ class Parser(object):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    # if len(sys.argv) == 1:
-    #     sys.argv.append('http://www.altairegion-im.ru/news.html?t=1')
+    if len(sys.argv) == 1:
+        sys.argv.append('')
     sys.stdout.write(Parser(sys.argv[1]).to_rss())
