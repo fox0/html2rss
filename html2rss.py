@@ -3,6 +3,8 @@ import os
 import re
 import sys
 import logging
+import email.utils
+from datetime import datetime
 from json import JSONDecoder
 from urllib.parse import urlparse
 
@@ -57,6 +59,7 @@ class Parser(object):
         self.url = url
         self.rule = _get_rule(url)
 
+    # todo ... -> dict -> rss
     def to_rss(self):
         ls = []
 
@@ -136,8 +139,64 @@ class Parser(object):
         return result
 
 
+def parser_vk(url):
+    from api_vk import API
+
+    api = API()
+    domain = urlparse(url).path.strip('/')
+    r = api.wall_get(domain=domain)
+    result = []
+    for i in r['items']:
+        text = [i['text']]
+        for a in i.get('attachments', []):
+            if a['type'] != 'photo':
+                continue
+            for s in a['photo']['sizes']:
+                if s['type'] != 'y':
+                    continue
+                text.append('<img src="{}">'.format(s['url']))
+
+        if 'copy_history' in i:
+            # copy-paste :)
+            text.append('Репост…')
+            for i in i['copy_history']:
+                text.append(i['text'])
+                for a in i.get('attachments', []):
+                    if a['type'] != 'photo':
+                        continue
+                    for s in a['photo']['sizes']:
+                        if s['type'] != 'y':
+                            continue
+                        text.append('<img src="{}">'.format(s['url']))
+
+        result.append({
+            'link': 'https://vk.com/wall{}_{}'.format(i['owner_id'], i['id']),
+            'title': 'wall{}_{}'.format(i['owner_id'], i['id']),
+            'description': '\n'.join(text),
+            'pubDate': email.utils.format_datetime(datetime.fromtimestamp(i['date'])),  # todo tz
+        })
+    return result
+
+
+def main(url):
+    host = urlparse(url).netloc
+    if host == 'vk.com':
+        ls = [
+            E.item(
+                E.link(i['link']),
+                E.guid(i['link']),
+                E.title(i['title']),
+                E.description(i['description']),
+                E.pubDate(i['pubDate']),
+            ) for i in parser_vk(url)]
+        rss = E.rss(E.channel(*ls), version='2.0')
+        return ET.tostring(rss, xml_declaration=True, encoding='utf-8').decode('utf-8')
+    else:
+        return Parser(url).to_rss()
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    if len(sys.argv) == 1:
-        sys.argv.append('')
-    sys.stdout.write(Parser(sys.argv[1]).to_rss())
+    # if len(sys.argv) == 1:
+    #     sys.argv.append('')
+    sys.stdout.write(main(sys.argv[1]))
