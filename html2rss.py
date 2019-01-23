@@ -171,7 +171,7 @@ def parser_vk(url):
 
         result.append({
             'link': 'https://vk.com/wall{}_{}'.format(i['owner_id'], i['id']),
-            'title': 'wall{}_{}'.format(i['owner_id'], i['id']),
+            'title': '#{}'.format(i['id']),
             'description': '\n'.join(text),
             'pubDate': email.utils.format_datetime(datetime.fromtimestamp(i['date'])),  # todo tz
         })
