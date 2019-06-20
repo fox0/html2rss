@@ -10,26 +10,6 @@
       "tag": "a"
     }
   },
-  "http://medstories.net/": {
-    "parent": {
-      "tag": "div",
-      "attrs": {
-        "class": "story-wrapper"
-      }
-    },
-    "link": {
-      "tag": "div",
-      "attrs": {
-        "class": "story-link"
-      }
-    },
-    "text": {
-      "tag": "div",
-      "attrs": {
-        "class": "story-content"
-      }
-    }
-  },
   "https://ficbook.net/fanfiction/\\w+/[\\w_]+": {
     "parent": {
       "tag": "article",

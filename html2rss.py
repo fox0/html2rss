@@ -1,56 +1,17 @@
 #!/usr/bin/env python3
-import os
-import re
+import configparser
 import sys
 import logging
 import email.utils
 from datetime import datetime
-from json import JSONDecoder
 from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from lxml import etree as ET
-from lxml.builder import E
+
+from rss import RSS, RSSItem
 
 log = logging.getLogger(__name__)
-
-
-# todo отдельные файлы-конфиги по названию хоста
-def load_rules():
-    """
-    "http://<url>": {
-      "parent": {"tag": "", ["attrs": {}]}
-      "link": …
-
-      "text": …
-      ["title": …]
-      ["user_agent": ""]
-      ["fix_encoding": True]
-      ["parser": ""]
-      ["paginator": {"name": "", "count": 0},]
-      ["slice": …]
-    }
-    """
-    filename = os.path.join(os.path.dirname(__file__), 'rules.json')
-    with open(filename) as f:
-        d = JSONDecoder().decode(f.read())
-    r = []
-    for expr, rule in d.items():
-        assert 'parent' in rule
-        assert 'link' in rule
-        r.append((re.compile(expr), rule))
-    return r
-
-
-rules = load_rules()
-
-
-def _get_rule(url):
-    for expr, rule in rules:
-        if expr.match(url):
-            return rule
-    raise Exception('Not found rule for url "%s"' % url)
 
 
 class Parser(object):
@@ -139,64 +100,40 @@ class Parser(object):
         return result
 
 
-def parser_vk(url):
-    from api_vk import API
-
-    api = API()
+def vk_api(url):
+    from vk_api import API
     domain = urlparse(url).path.strip('/')
+    log.debug('domain=%s', domain)
+    api = API()
     r = api.wall_get(domain=domain)
-    result = []
     for i in r['items']:
-        text = [i['text']]
-        for a in i.get('attachments', []):
-            if a['type'] != 'photo':
-                continue
-            for s in a['photo']['sizes']:
-                if s['type'] != 'y':
-                    continue
-                text.append('<img src="{}">'.format(s['url']))
-
-        if 'copy_history' in i:
-            # copy-paste :)
-            text.append('Репост…')
-            for i in i['copy_history']:
-                text.append(i['text'])
-                for a in i.get('attachments', []):
-                    if a['type'] != 'photo':
-                        continue
-                    for s in a['photo']['sizes']:
-                        if s['type'] != 'y':
-                            continue
-                        text.append('<img src="{}">'.format(s['url']))
-
-        result.append({
-            'link': 'https://vk.com/wall{}_{}'.format(i['owner_id'], i['id']),
-            'title': '#{}'.format(i['id']),
-            'description': '\n'.join(text),
-            'pubDate': email.utils.format_datetime(datetime.fromtimestamp(i['date'])),  # todo tz
-        })
-    return result
+        yield RSSItem(
+            link='https://vk.com/wall%d_%d' % (i['owner_id'], i['id']),
+            title='#%d' % i['id'],
+            description=i['text'].replace('\n', '<br>'),
+            pub_date=email.utils.format_datetime(datetime.fromtimestamp(i['date'])),  # todo tz
+        )
+    raise StopIteration
 
 
-def main(url):
-    host = urlparse(url).netloc
-    if host == 'vk.com':
-        ls = [
-            E.item(
-                E.link(i['link']),
-                E.guid(i['link']),
-                E.title(i['title']),
-                E.description(i['description']),
-                E.pubDate(i['pubDate']),
-            ) for i in parser_vk(url)]
-        rss = E.rss(E.channel(*ls), version='2.0')
-        return ET.tostring(rss, xml_declaration=True, encoding='utf-8').decode('utf-8')
-    else:
-        return Parser(url).to_rss()
+def main(*urls):
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    rss = RSS()
+    for url in urls:
+        host = urlparse(url).netloc
+        log.debug('host=%s', host)
+        if host not in config:
+            log.error('')
+            continue
+        rules = config[host]
+        func = globals()[rules['source']]
+        for i in func(url):
+            rss.append(i)
+    return rss.tostring()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    # if len(sys.argv) == 1:
-    #     sys.argv.append('')
-    sys.stdout.write(main(sys.argv[1]))
+    sys.stdout.write(main(*sys.argv[1:]))
