@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import configparser
+import re
 import sys
 import logging
 import email.utils
@@ -19,6 +20,13 @@ def http_parser(url, rules):
     soup = BeautifulSoup(r.text, 'lxml')
     for i in soup.find_all(rules['tag']):
         url2 = i.find_all('a', attrs=_get_attrs(rules.get('link.attrs')))[0]['href']
+        title = find_tag(i, rules, 'title').text.strip()
+        f = rules.getint('title.filter')
+        if f:
+            ls = re.findall(r'(\d+)', title)
+            log.debug('%s | %s', ls, title)
+            if int(ls[0]) <= f:
+                continue
         yield Markup('''\
 <link>{uri.scheme}://{uri.netloc}{uri2.path}</link>
 <guid>{uri.scheme}://{uri.netloc}{uri2.path}</guid>
@@ -26,7 +34,7 @@ def http_parser(url, rules):
 <description>{text}</description>''').format(
             uri=urlparse(url),
             uri2=urlparse(url2),
-            title=find_tag(i, rules, 'title').text.strip(),
+            title=title,
             text=find_tag(i, rules, 'text').__unicode__())
 
 
@@ -80,7 +88,10 @@ def main(*urls):
             log.error('invalid host %s', host)
             continue
         rules = config[host]
-        func = globals()[rules['source']]
+        func = {
+            'vk_api': vk_api,
+            'http_parser': http_parser,
+        }[rules['source']]
         for i in func(url, rules):
             result.append(i)
 
@@ -96,4 +107,5 @@ def main(*urls):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    sys.stdout.write(main(*sys.argv[1:]))
+    rrr = main(*sys.argv[1:])
+    sys.stdout.write(rrr)
