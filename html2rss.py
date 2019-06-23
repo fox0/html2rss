@@ -25,7 +25,7 @@ def http_parser(url, rules):
         if f:
             ls = re.findall(r'(\d+)', title)
             log.debug('%s | %s', ls, title)
-            if int(ls[0]) <= f:
+            if ls and int(ls[0]) <= f:
                 continue
         yield Markup('''\
 <link>{uri.scheme}://{uri.netloc}{uri2.path}</link>
