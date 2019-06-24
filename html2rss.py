@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import configparser
 import re
 import sys
 import logging
@@ -11,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 from markupsafe import Markup
 
+from config import Config
+
 log = logging.getLogger(__name__)
 
 
@@ -19,8 +20,9 @@ def http_parser(url, rules):
     r.raise_for_status()
     soup = BeautifulSoup(r.text, 'lxml')
     for i in soup.select(rules['selector']):
-        url2 = i.select(rules['link'])[0]['href']
-        title = i.select(rules['title'])[0].text.strip()
+        sel_link = rules['link']
+        url2 = i.select(sel_link)[0]['href']
+        title = i.select(rules.get('title', sel_link))[0].text.strip()
 
         f = rules.getint('title.filter')
         if f:
@@ -37,7 +39,7 @@ def http_parser(url, rules):
             uri=urlparse(url),
             uri2=urlparse(url2),
             title=title,
-            text=i.select(rules['text'])[0])
+            text=i.select(rules.get('text', sel_link))[0])
 
 
 def vk_api(url, rules):
@@ -65,21 +67,13 @@ sources = {
 
 
 def main(*urls):
-    config = configparser.ConfigParser()
-    config.read('config.ini')
-
+    config = Config('config.ini')
     result = []
     for url in urls:
-        host = urlparse(url).netloc
-        log.debug('host=%s', host)
-        if host not in config:
-            log.error('invalid host %s', host)
-            continue
-        rules = config[host]
+        rules = config.get_config(url)
         func = sources[rules['source']]
         for i in func(url, rules):
             result.append(i)
-
     return '''\
 <?xml version='1.0' encoding='utf-8'?>
 <rss version="2.0">
