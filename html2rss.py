@@ -12,8 +12,7 @@ def main(*urls):
     for url in urls:
         rules = config.get_config(url)
         func = getattr(parsers, rules['parser'])
-        for i in func(url, rules):
-            result.append(i)
+        result.extend(func(url, rules))
     return '''\
 <?xml version='1.0' encoding='utf-8'?>
 <rss version="2.0">
