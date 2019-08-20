@@ -21,6 +21,9 @@ def http(url, rules):
         result = []
         for i in soup.select(rules['selector']):
             result.append(Markup('<description>{text}</description>').format(text=i))
+
+    if rules.getboolean('reverse'):
+        result.reverse()
     log.debug('len=%d', len(result))
     return result
 
