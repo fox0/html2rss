@@ -1,3 +1,4 @@
+"""Различные парсеры сайтов"""
 import re
 import logging
 from urllib.parse import urlparse
@@ -7,30 +8,43 @@ from markupsafe import Markup
 log = logging.getLogger(__name__)
 
 
-def http(url, rules):
-    import requests
-    from bs4 import BeautifulSoup
+def http_simple(url, rules):
+    """
+    Простой http парсер
 
-    r = requests.get(url)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, 'lxml')
+    :param url:
+    :type url: str
+    :param rules:
+    :type rules:
+    :return:
+    :rtype: list
 
-    if rules.get('link'):
-        result = _http(soup, url, rules)
-    else:
-        result = []
-        for i in soup.select(rules['selector']):
-            result.append(Markup('<description>{text}</description>').format(text=i))
-
-    if rules.getboolean('reverse'):
-        result.reverse()
-    log.debug('len=%d', len(result))
+    Пример конфига:
+        [ficbook.net/readfic]
+        parser = http_simple
+        selector = div.comment_message
+        reverse = yes (опционально)
+    """
+    soup = _get_soup(url)
+    config_selector = rules['selector']
+    result = []
+    for i in soup.select(config_selector):
+        result.append(Markup('<description>{text}</description>').format(text=i))
     return result
 
 
-def _http(soup, url, rules):
+def http(url, rules):
+    """
+    :param url:
+    :type url: str
+    :param rules:
+    :type rules:
+    :return:
+    :rtype: list
+    """
+    soup = _get_soup(url)
     config_selector = rules['selector']
-    config_link = rules.get('link')
+    config_link = rules['link']
     config_title = rules.get('title', config_link)
     config_title_filter = rules.getint('title.filter')
     config_text = rules.get('text', config_link)
@@ -50,33 +64,49 @@ def _http(soup, url, rules):
 <link>{uri.scheme}://{uri.netloc}{uri2.path}</link>
 <guid>{uri.scheme}://{uri.netloc}{uri2.path}</guid>
 <title>{title}</title>
-<description>{text}</description>''').format(
-            uri=urlparse(url),
-            uri2=urlparse(url2),
-            title=title,
-            text=i.select(config_text)[0]))
+<description>{text}</description>''').format(uri=urlparse(url),
+                                             uri2=urlparse(url2),
+                                             title=title,
+                                             text=i.select(config_text)[0]))
     return result
 
 
+def _get_soup(url):
+    import requests
+    from bs4 import BeautifulSoup
+    response = requests.get(url)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, 'lxml')
+    return soup
+
+
 def vk(url, rules):
+    """
+    Парсер стен ВКонтакте
+
+    :param url:
+    :type url: str
+    :param rules:
+    :type rules:
+    :return:
+    :rtype: list
+    """
     from datetime import datetime
     import email.utils
-    from vk_api import API
+    from vkapi import VkAPI
 
     domain = urlparse(url).path.strip('/')
     log.debug('domain=%s', domain)
-    api = API()
-    r = api.wall_get(domain=domain)
+    api = VkAPI()
+    response = api.wall_get(domain=domain)
     result = []
-    for i in r['items']:
+    for i in response['items']:
         result.append(Markup('''\
 <link>https://vk.com/wall{i[owner_id]}_{i[id]}</link>
 <guid>https://vk.com/wall{i[owner_id]}_{i[id]}</guid>
 <title>#{i[id]}</title>
 <description>{text}</description>
-<pubDate>{date}</pubDate>''').format(
-            i=i,
-            text=i['text'].replace('\n', '<br>'),
-            date=email.utils.format_datetime(datetime.fromtimestamp(i['date']))))  # todo tz
-    log.debug('len=%d', len(result))
+<pubDate>{date}</pubDate>''').format(i=i,
+                                     text=i['text'].replace('\n', '<br>'),
+                                     date=email.utils.format_datetime(datetime.fromtimestamp(i['date']))))  # todo tz
     return result

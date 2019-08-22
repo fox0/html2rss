@@ -1,0 +1,22 @@
+[MASTER]
+#ignore-patterns=.*_pb2.py
+jobs=0
+
+[FORMAT]
+max-line-length=121
+
+[BASIC]
+good-names=i,
+           j,
+           k,
+           ex,
+           Run,
+           _,
+           log,
+           f
+
+[MISCELLANEOUS]
+notes=FIXME,
+      XXX,
+      TODO,
+      000
