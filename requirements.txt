@@ -2,3 +2,7 @@ requests
 beautifulsoup4
 lxml
 markupsafe
+
+## dev
+#pylint
+#sphinx

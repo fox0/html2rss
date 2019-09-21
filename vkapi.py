@@ -10,8 +10,6 @@ except ImportError:
 class VkAPI:
     """Враппер для VK_API"""
 
-    # __slots__ = '_access_token', '_session'
-
     def __init__(self):
         self._access_token = DEFAULT_ACCESS_TOKEN
         self._session = requests.Session()
