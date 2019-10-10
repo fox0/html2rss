@@ -1,6 +1,6 @@
 SPHINXSOURCEDIR	= docs
 SPHINXBUILDDIR  = docs/_build
 
-docs: makefile
+docs: Makefile
 	sphinx-apidoc -o "$(SPHINXSOURCEDIR)" .
 	sphinx-build -M html "$(SPHINXSOURCEDIR)" "$(SPHINXBUILDDIR)"
