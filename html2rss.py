@@ -1,37 +1,35 @@
 #!/usr/bin/env python3
-"""html2rss"""
 import sys
 import logging
+from urllib.parse import urlparse, ParseResult
 
-from config import Config
 import parsers
 
 log = logging.getLogger(__name__)
 
 
-def main(*urls):
+def main(url):
     """Точка входа"""
-    config = Config('config.ini')
-    result = []
-    for url in urls:
-        rules = config.get_config(url)
-        func = getattr(parsers, rules['parser'])
-        ls = func(url, rules)
-        log.debug('len=%d', len(ls))
-        if rules.getboolean('reverse'):
-            ls.reverse()
-        result.extend(ls)
+    uri: ParseResult = urlparse(url)
+    log.debug('%s', uri)
+    if uri.netloc == 'vk.com':
+        result = parsers.vk(uri)
+    else:
+        raise NotImplementedError
+
+    # todo dict2xml
 
     return '''\
 <?xml version='1.0' encoding='utf-8'?>
 <rss version="2.0">
     <channel>
         <link>{link}</link>
-        <item>{items}</item>
+        {items}
     </channel>
-</rss>'''.format(link=urls[0], items='</item>\n<item>'.join(result))
+</rss>'''.format(link=url, items=''.join('<item>{}</item>'.format(i) for i in result))
 
 
 if __name__ == '__main__':
+    # logging.basicConfig(level=logging.INFO)
     logging.basicConfig(level=logging.DEBUG)
-    sys.stdout.write(main(*sys.argv[1:]))
+    sys.stdout.write(main(sys.argv[1]))

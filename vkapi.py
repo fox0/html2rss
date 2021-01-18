@@ -8,16 +8,14 @@ except ImportError:
 
 
 class VkAPI:
-    """Враппер для VK_API"""
-
     def __init__(self):
         self._access_token = DEFAULT_ACCESS_TOKEN
         self._session = requests.Session()
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str):
         url = 'https://api.vk.com/method/' + attr.replace('_', '.')
 
-        def func(**kwargs):
+        def func(**kwargs) -> dict:
             kwargs['access_token'] = self._access_token
             kwargs['v'] = '5.84'
             result = self._session.post(url, kwargs).json()
